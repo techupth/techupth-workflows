@@ -1,10 +1,10 @@
-name: Send Repo Name
+name: Send Assignment Submit Result Template
 
 on:
   workflow_call:
 
 jobs:
-  send-repo-name:
+  send-assignment-submit-result:
     runs-on: ubuntu-latest
 
     env:
