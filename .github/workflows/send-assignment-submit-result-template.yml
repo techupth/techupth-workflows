@@ -1,0 +1,41 @@
+name: Send Repo Name
+
+on:
+  workflow_call:
+    secrets:
+      AUTH_GITHUB_TOKEN:
+        required: true
+      DATABASE_URL:
+        required: true
+
+jobs:
+  send-repo-name:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUTH_GITHUB_TOKEN: ${{ secrets.AUTH_GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download script
+        run: |
+          curl -o script.js -L https://raw.githubusercontent.com/techupth/techupth-workflows/main/scripts/send-assignment-submit-result-script.js
+
+      - name: Send assignment submit result to SQL Database
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          retry_on: error
+          timeout_seconds: 5
+          command: node script.js ${{ github.repository }}
