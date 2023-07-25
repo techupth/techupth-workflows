@@ -2,11 +2,6 @@ name: Send Repo Name
 
 on:
   workflow_call:
-    secrets:
-      AUTH_GITHUB_TOKEN:
-        required: true
-      DATABASE_URL:
-        required: true
 
 jobs:
   send-repo-name:
