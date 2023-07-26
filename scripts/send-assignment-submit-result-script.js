@@ -20,6 +20,8 @@ const pool = new Pool({
 async function sendAssignmentSubmitResult(repoName) {
   const org = repoName.split("/")[0];
   const repo = repoName.split("/")[1];
+  let userAssignmentValues;
+
   try {
     const fetchingRepo = await fetch(
       `https://api.github.com/repos/${org}/${repo}`,
@@ -38,18 +40,6 @@ async function sendAssignmentSubmitResult(repoName) {
       ""
     );
 
-    const query = `
-     UPDATE "UserAssignment"
-      SET "userAssignmentLink" = $1, "updatedAt" = NOW()
-      WHERE "UserAssignment"."lessonAssignmentId" IN (
-        SELECT "LessonAssignment"."lessonAssignmentId"
-        FROM "LessonAssignment"
-        JOIN "UserList" ON "UserAssignment"."userId" = "UserList"."id"
-        WHERE "UserList"."githubUsername" = $2
-          AND "LessonAssignment"."assignmentName" = $3
-      );
-    `;
-
     const fetchingTeamMember = await fetch(
       `https://api.github.com/orgs/${org}/teams/${team}/members`,
       {
@@ -60,18 +50,55 @@ async function sendAssignmentSubmitResult(repoName) {
 
     for (const item of teamMember) {
       const client = await pool.connect();
-      const values = [
+      const user = await client.query(
+        `
+          SELECT "id" as "userId"
+          FROM "UserList"
+          WHERE "githubUsername" = $1;
+        `,
+        [item.login.toLowerCase()]
+      );
+
+      const lessonAssignmentId = await client.query(
+        `
+          SELECT "lessonAssignmentId"
+          FROM "LessonAssignment"
+          WHERE "assignmentName" = $1;
+        `,
+        [assignmentName]
+      );
+
+      userAssignmentValues = [
+        user.rows[0].userId,
+        lessonAssignmentId.rows[0].lessonAssignmentId,
         JSON.stringify({
           url: `https://github.com/${repoName}`,
           repoName,
         }),
-        item.login.toLowerCase(),
-        assignmentName,
+        null,
+        null,
       ];
 
-      await client.query(query, values);
+      const updateUserAssignmentQuery = `
+        INSERT INTO "UserAssignment" ("userId", "lessonAssignmentId", "userAssignmentLink", "score", "feedback", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        ON CONFLICT ("userId", "lessonAssignmentId") DO UPDATE
+        SET "updatedAt" = NOW();
+      `;
+
+      await client.query(updateUserAssignmentQuery, userAssignmentValues);
       client.release();
     }
+    // Data debugging log section
+    const dataDebuggingLog = {
+      org,
+      repo,
+      team,
+      teamMember,
+      userAssignmentValues,
+    };
+
+    console.log(`Data debugging log: ${dataDebuggingLog}`);
   } catch (error) {
     console.error("Error:", error);
     throw error;
