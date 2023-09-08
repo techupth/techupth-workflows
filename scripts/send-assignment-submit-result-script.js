@@ -23,6 +23,7 @@ async function sendAssignmentSubmitResult(repoName) {
   let userAssignmentValues;
 
   try {
+    console.log(`🟢 Start fetching repo ${repoName}`);
     const fetchingRepo = await fetch(
       `https://api.github.com/repos/${org}/${repo}`,
       {
@@ -39,7 +40,7 @@ async function sendAssignmentSubmitResult(repoName) {
       repoInfo.template_repository.full_name + "-",
       ""
     );
-
+    console.log(`🟢 Start fetching team member on team: ${team}`);
     const fetchingTeamMember = await fetch(
       `https://api.github.com/orgs/${org}/teams/${team}/members`,
       {
@@ -48,7 +49,9 @@ async function sendAssignmentSubmitResult(repoName) {
     );
     const teamMember = await fetchingTeamMember.json();
 
+    console.log(`🟢 Start updating assignment status on each team member`);
     for (const item of teamMember) {
+      console.log(`🙋🏽‍♂️ Team member data: ${JSON.stringify(item)}`);
       const client = await pool.connect();
       const user = await client.query(
         `
@@ -58,7 +61,7 @@ async function sendAssignmentSubmitResult(repoName) {
         `,
         [item.login.toLowerCase()]
       );
-
+      console.log(`🙋🏽‍♂️ User data: ${JSON.stringify(user)}`);
       const lessonAssignmentId = await client.query(
         `
           SELECT "lessonAssignmentId"
@@ -85,20 +88,12 @@ async function sendAssignmentSubmitResult(repoName) {
         ON CONFLICT ("userId", "lessonAssignmentId") DO UPDATE
         SET "updatedAt" = NOW();
       `;
-
+      console.log(
+        `🟢 Updating assignment status on user: ${user.rows[0].userId}`
+      );
       await client.query(updateUserAssignmentQuery, userAssignmentValues);
       client.release();
     }
-    // Data debugging log section
-    const dataDebuggingLog = {
-      org,
-      repo,
-      team,
-      teamMember,
-      userAssignmentValues,
-    };
-
-    console.log(`Data debugging log: ${dataDebuggingLog}`);
   } catch (error) {
     console.error("Error:", error);
     throw error;
