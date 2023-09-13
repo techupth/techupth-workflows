@@ -9,6 +9,7 @@ jobs:
 
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
       AUTH_GITHUB_TOKEN: ${{ secrets.AUTH_GITHUB_TOKEN }}
 
     steps:
