@@ -11,7 +11,7 @@ const headers = {
 const testRepoName = process.argv[2];
 
 const isTesterRepo = testRepoName.includes("testqa");
-console.log("💬 Tester repo: ${isTesterRepo ? "✅" : "❌"}`)
+console.log(`💬 Tester repo: ${isTesterRepo ? "✅" : "❌"}`)
 
 const dbConnectionString = isTesterRepo ? process.env.DEV_DATABASE_URL : process.env.DATABASE_URL;
 
