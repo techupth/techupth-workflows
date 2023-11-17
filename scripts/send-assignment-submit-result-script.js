@@ -56,6 +56,7 @@ async function sendAssignmentSubmitResult(repoName) {
       }
     );
     const teamMember = await fetchingTeamMember.json();
+    console.log("log ดูทีม member", JSON.stringify(teamMember));
 
     console.log(`🟢 Start updating assignment status on each team member`);
     for (const item of teamMember) {
