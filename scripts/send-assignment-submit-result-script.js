@@ -38,7 +38,7 @@ async function sendAssignmentSubmitResult(repoName) {
       }
     );
 
-    const repoInfo = await fetchingRepo.json();\
+    const repoInfo = await fetchingRepo.json();
     console.log("🪵 Repo Info: ", JSON.stringify(repoInfo));
     const assignmentName = repoInfo.template_repository.full_name.replace(
       org + "/",
