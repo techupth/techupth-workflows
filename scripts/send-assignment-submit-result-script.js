@@ -27,6 +27,7 @@ const pool = new Pool({
 async function sendAssignmentSubmitResult(repoName) {
   const org = repoName.split("/")[0];
   const repo = repoName.split("/")[1];
+
   let userAssignmentValues;
 
   try {
@@ -40,6 +41,7 @@ async function sendAssignmentSubmitResult(repoName) {
 
     const repoInfo = await fetchingRepo.json();
     console.log("🪵 Repo Info: ", JSON.stringify(repoInfo));
+
     const assignmentName = repoInfo.template_repository.full_name.replace(
       org + "/",
       ""
@@ -48,6 +50,9 @@ async function sendAssignmentSubmitResult(repoName) {
       repoInfo.template_repository.full_name + "-",
       ""
     );
+
+    const courseSlug = team.split("-")[0];
+
     console.log(`🟢 Start fetching team member on team: ${team}`);
     const fetchingTeamMember = await fetch(
       `https://api.github.com/orgs/${org}/teams/${team}/members`,
@@ -80,6 +85,15 @@ async function sendAssignmentSubmitResult(repoName) {
         [assignmentName]
       );
 
+      const courseId = await client.query(
+        `
+          SELECT "courseId"
+          FROM "Course"
+          WHERE "slug" = $1;
+        `,
+        [courseSlug]
+      );
+
       userAssignmentValues = [
         user.rows[0].userId,
         lessonAssignmentId.rows[0].lessonAssignmentId,
@@ -89,13 +103,14 @@ async function sendAssignmentSubmitResult(repoName) {
         }),
         null,
         null,
+        courseId.rows[0].courseId,
       ];
 
       const updateUserAssignmentQuery = `
-        INSERT INTO "UserAssignment" ("userId", "lessonAssignmentId", "userAssignmentLink", "score", "feedback", "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        ON CONFLICT ("userId", "lessonAssignmentId") DO UPDATE
-        SET "updatedAt" = NOW();
+      INSERT INTO "UserAssignment" ("userId", "lessonAssignmentId", "userAssignmentLink", "score", "feedback", "courseId", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ON CONFLICT ("userId", "lessonAssignmentId", "courseId") DO UPDATE
+      SET "updatedAt" = NOW();
       `;
       console.log(
         `🟢 Updating assignment status on user: ${user.rows[0].userId}`
