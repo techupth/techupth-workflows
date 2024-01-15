@@ -94,7 +94,7 @@ async function sendAssignmentSubmitResult(repoName) {
       const updateUserAssignmentQuery = `
         INSERT INTO "UserAssignment" ("userId", "lessonAssignmentId", "userAssignmentLink", "score", "feedback", "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        ON CONFLICT ("userId", "lessonAssignmentId") DO UPDATE
+        ON CONFLICT ("userId", "lessonAssignmentId","courseId") DO UPDATE
         SET "updatedAt" = NOW();
       `;
       console.log(
